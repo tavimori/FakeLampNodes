@@ -120,6 +120,8 @@
 
 
     var path = []
+    $('#clear').click(() => {path = []; renderWaypoints()});
+
 
 
     map.on('load', function () {
@@ -345,6 +347,7 @@
                         [basePoints[1].lngLat.lng, basePoints[1].lngLat.lat],
                         getlngLatByRelCoord(1, 1),
                         [basePoints[2].lngLat.lng, basePoints[2].lngLat.lat],
+                        [basePoints[0].lngLat.lng, basePoints[0].lngLat.lat],
 
                     ]
                     map.addSource('demoCoordinate', {
@@ -380,6 +383,31 @@
                         'paint': {
                             'line-color': '#000',
                             'line-width': 3
+                        }
+                    });
+
+
+                    map.addSource('waypoint_line_1', {
+                            type: 'geojson',
+                            lineMetrics: true,
+                            data:  {
+                                'type': 'Feature',
+                                'properties': {},
+                                'geometry': {
+                                    'type': 'LineString',
+                                    'coordinates': path
+                                },
+                            }
+                    });
+
+
+                    map.addLayer({
+                        type: 'line',
+                        source: 'waypoint_line_1',
+                        id: 'waypoint_line_1',
+                        layout: {
+                            'line-cap': 'round',
+                            'line-join': 'round',
                         }
                     });
 
@@ -524,6 +552,25 @@
         }
     }
 
+    
+
+
+    function renderWaypoints() {
+        map.getSource('waypoint_line_1').setData(
+                    {
+                            // type: 'geojson',
+                            // lineMetrics: true,
+                            // data:  {
+                                'type': 'Feature',
+                                'properties': {},
+                                'geometry': {
+                                    'type': 'LineString',
+                                    'coordinates': path
+                                },
+                            // }
+                    })
+    }
+
     function renderDemoArea() {
         // Add a data source containing GeoJSON data.
         console.log("try render")
@@ -557,31 +604,46 @@
 
     }
 
-    // map.on("click", function (e) {
-    //     if (basePoints.length >= 3) {
-    //         basePoints = [];
-    //     }
-    //     var coord_relative = { x: 0, y: 0 };
-    //     switch (basePoints.length) {
-    //         case 0:
-    //             coord_relative.x = 0;
-    //             coord_relative.y = 0;
-    //             break;
-    //         case 1:
-    //             coord_relative.x = 1;
-    //             coord_relative.y = 0;
-    //         case 2:
-    //             coord_relative.x = 0;
-    //             coord_relative.y = 1
-    //     }
-    //     var lngLat = {
-    //         lng: e.lngLat.lng,
-    //         lat: e.lngLat.lat
-    //     }
-    //     basePoints.push({ coord_relative: coord_relative, lngLat: lngLat })
-    //     console.log("add corrd")
-    //     renderDemoArea()
-    // })
+
+    function generateMoveList() {
+        var moveList = []
+        for (var i = 1; i < path.length; i++) {
+            path[i]
+        }
+    }
+
+    map.on("click", function (e) {
+        // if (basePoints.length >= 3) {
+        //     basePoints = [];
+        // }
+        // var coord_relative = { x: 0, y: 0 };
+        // switch (basePoints.length) {
+        //     case 0:
+        //         coord_relative.x = 0;
+        //         coord_relative.y = 0;
+        //         break;
+        //     case 1:
+        //         coord_relative.x = 1;
+        //         coord_relative.y = 0;
+        //     case 2:
+        //         coord_relative.x = 0;
+        //         coord_relative.y = 1
+        // }
+        // var lngLat = {
+        //     lng: e.lngLat.lng,
+        //     lat: e.lngLat.lat
+        // }
+        // basePoints.push({ coord_relative: coord_relative, lngLat: lngLat })
+        // console.log("add corrd")
+        // renderDemoArea()
+
+
+
+        path.push([e.lngLat.lng.toString(), e.lngLat.lat.toString()])
+        renderWaypoints()
+
+        
+    })
 
 
     // add popups
