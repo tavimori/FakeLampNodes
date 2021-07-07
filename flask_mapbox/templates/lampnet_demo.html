@@ -85,6 +85,10 @@
             <b>Device Alive:</b> <span id="alive_count"></span><br>
             <b>Device Dead:</b> <span id="dead_count"></span><br>
             <b>Traffic Occupancy:</b> <span id="net_util"></span><br>
+            <b>鼠标位置：</b><span id="mouse_coord"></span><br>
+            <button id="go">Go</button>
+            <button id="clear">Clear</button>
+            <button>Edit Coordinate</button>
         </div>
     </div>
 </div>
@@ -107,6 +111,17 @@
 
     var update_url = '/_update_frame';
     var init_url = '/_init_lamps';
+
+    var basePoints = [
+        { coord_relative: { x: 0, y: 0 }, lngLat: { lng: 114.20525998727129, lat: 22.692053559502313 } },
+        { coord_relative: { x: 0, y: 1 }, lngLat: { lng: 114.20861198930925, lat: 22.690384601761863 } },
+        { coord_relative: { x: 0, y: 1 }, lngLat: { lng: 114.20819444325406, lat: 22.696120927618054 } }
+    ]
+
+
+    var path = []
+
+
     map.on('load', function () {
             var init_request = new XMLHttpRequest();
             init_request.open('GET', init_url, true);
@@ -324,6 +339,51 @@
                             "text-size": 12
                         },
                     })
+
+                    coord = [
+                        [basePoints[0].lngLat.lng, basePoints[0].lngLat.lat],
+                        [basePoints[1].lngLat.lng, basePoints[1].lngLat.lat],
+                        getlngLatByRelCoord(1, 1),
+                        [basePoints[2].lngLat.lng, basePoints[2].lngLat.lat],
+
+                    ]
+                    map.addSource('demoCoordinate', {
+                        'type': 'geojson',
+                        'data': {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Polygon',
+                                // These coordinates outline Maine.
+                                'coordinates': [
+                                    coord
+                                ]
+                            }
+                        }
+                    });
+
+                    map.addLayer({
+                        'id': 'demoCoordinate',
+                        'type': 'fill',
+                        'source': 'demoCoordinate', // reference the data source
+                        'layout': {},
+                        'paint': {
+                            'fill-color': '#0080ff', // blue color fill
+                            'fill-opacity': 0.5
+                        }
+                    });
+                    // Add a black outline around the polygon.
+                    map.addLayer({
+                        'id': 'demoCoordinateOutline',
+                        'type': 'line',
+                        'source': 'demoCoordinate',
+                        'layout': {},
+                        'paint': {
+                            'line-color': '#000',
+                            'line-width': 3
+                        }
+                    });
+
+
                 }
             };
             init_request.send();
@@ -443,8 +503,86 @@
                 ];
                 map.setPaintProperty('line_3', 'line-gradient', tmp_gradient);
             }, 1000);
-        }
+    }
     );
+
+
+
+
+    function getlngLatByRelCoord(x, y) {
+        if (basePoints.length == 3) {
+            var baseLng = basePoints[0].lngLat.lng
+            var baseLat = basePoints[0].lngLat.lat
+
+            var x1LngShift = basePoints[1].lngLat.lng - basePoints[0].lngLat.lng
+            var x1LatShift = basePoints[1].lngLat.lat - basePoints[0].lngLat.lat
+
+            var y1LngShift = basePoints[2].lngLat.lng - basePoints[0].lngLat.lng
+            var y1LatShift = basePoints[2].lngLat.lat - basePoints[0].lngLat.lat
+
+            return [baseLng + x * x1LngShift + y * y1LngShift, baseLat + x * x1LatShift + y * y1LatShift]
+        }
+    }
+
+    function renderDemoArea() {
+        // Add a data source containing GeoJSON data.
+        console.log("try render")
+        // debugger
+        if (basePoints.length == 3) {
+            // debugger
+            console.log("render")
+            coord = [
+                [basePoints[0].lngLat.lng, basePoints[0].lngLat.lat],
+                [basePoints[1].lngLat.lng, basePoints[1].lngLat.lat],
+                getlngLatByRelCoord(1, 1),
+                [basePoints[2].lngLat.lng, basePoints[2].lngLat.lat],
+
+            ]
+            // debugger
+
+
+            map.getSource('demoCoordinate').setData(
+                {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        // These coordinates outline Maine.
+                        'coordinates': [
+                            coord
+                        ]
+                    }
+                }
+            )
+        }
+
+    }
+
+    // map.on("click", function (e) {
+    //     if (basePoints.length >= 3) {
+    //         basePoints = [];
+    //     }
+    //     var coord_relative = { x: 0, y: 0 };
+    //     switch (basePoints.length) {
+    //         case 0:
+    //             coord_relative.x = 0;
+    //             coord_relative.y = 0;
+    //             break;
+    //         case 1:
+    //             coord_relative.x = 1;
+    //             coord_relative.y = 0;
+    //         case 2:
+    //             coord_relative.x = 0;
+    //             coord_relative.y = 1
+    //     }
+    //     var lngLat = {
+    //         lng: e.lngLat.lng,
+    //         lat: e.lngLat.lat
+    //     }
+    //     basePoints.push({ coord_relative: coord_relative, lngLat: lngLat })
+    //     console.log("add corrd")
+    //     renderDemoArea()
+    // })
+
 
     // add popups
     map.on('click', 'lamps', function (e) {
@@ -469,6 +607,16 @@
     map.on('mouseleave', 'lamps', function () {
         map.getCanvas().style.cursor = '';
     });
+
+                        map.on('mousemove', function (e) {
+                            document.getElementById('mouse_coord').innerHTML =
+                                // e.point is the x, y coordinates of the mousemove event relative
+                                // to the top-left corner of the map
+                                JSON.stringify(e.point) +
+                                '<br />' +
+                                // e.lngLat is the longitude, latitude geographical position of the event
+                                JSON.stringify(e.lngLat.wrap());
+                        });
 
     Date.prototype.Format = function (fmt) {
         var o = {
